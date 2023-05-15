@@ -216,32 +216,52 @@ def item_group_query(doctype, txt, searchfield, start, page_len, filters):
 def check_opening_entry(user):
 	open_vouchers = frappe.db.get_all(
 		"POS Opening Entry",
-		filters={"user": user, "pos_closing_entry": ["in", ["", None]], "docstatus": 1},
+		filters={"user": user, "pos_closing_entry": ["in", ["", None]], "docstatus": 1 , "status": "Open"},
 		fields=["name", "company", "pos_profile", "period_start_date"],
 		order_by="period_start_date desc",
 	)
-
+	
 	return open_vouchers
 
 
 @frappe.whitelist()
 def create_opening_voucher(pos_profile, company, balance_details):
 	balance_details = json.loads(balance_details)
+	 
+	if frappe.db.get_value("POS Profile",{"name":pos_profile},['disallow_multiple_pos_open']):
+		if frappe.db.exists("POS Opening Entry",{"status":"Open","docstatus":1,"pos_profile":pos_profile}):
+			frappe.throw("Open POS Entry voucher exists")
+		else:
+			new_pos_opening = frappe.get_doc(
+				{
+					"doctype": "POS Opening Entry",
+					"period_start_date": frappe.utils.get_datetime(),
+					"posting_date": frappe.utils.getdate(),
+					"user": frappe.session.user,
+					"pos_profile": pos_profile,
+					"company": company,
+				}
+			)
+			new_pos_opening.set("balance_details", balance_details)
+			new_pos_opening.submit()
 
-	new_pos_opening = frappe.get_doc(
-		{
-			"doctype": "POS Opening Entry",
-			"period_start_date": frappe.utils.get_datetime(),
-			"posting_date": frappe.utils.getdate(),
-			"user": frappe.session.user,
-			"pos_profile": pos_profile,
-			"company": company,
-		}
-	)
-	new_pos_opening.set("balance_details", balance_details)
-	new_pos_opening.submit()
+			return new_pos_opening.as_dict()
+			
+	else :
+		new_pos_opening = frappe.get_doc(
+			{
+				"doctype": "POS Opening Entry",
+				"period_start_date": frappe.utils.get_datetime(),
+				"posting_date": frappe.utils.getdate(),
+				"user": frappe.session.user,
+				"pos_profile": pos_profile,
+				"company": company,
+			}
+		)
+		new_pos_opening.set("balance_details", balance_details)
+		new_pos_opening.submit()
 
-	return new_pos_opening.as_dict()
+		return new_pos_opening.as_dict()
 
 
 @frappe.whitelist()
