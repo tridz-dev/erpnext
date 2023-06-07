@@ -23,6 +23,7 @@
   "hide_unavailable_items",
   "auto_add_item_to_cart",
   "validate_stock_on_save",
+  "create_sales_invoice",
   "column_break_16",
   "update_stock",
   "ignore_pricing_rule",
@@ -375,6 +376,13 @@
    "fieldname": "disable_rounded_total",
    "fieldtype": "Check",
    "label": "Disable Rounded Total"
+  },
+  {
+   "default": "0",
+   "description": "This will create sales invoice from POS",
+   "fieldname": "create_sales_invoice",
+   "fieldtype": "Check",
+   "label": "Create Sales Invoice"
   }
  ],
  "icon": "icon-cog",
@@ -402,7 +410,7 @@
    "link_fieldname": "pos_profile"
   }
  ],
- "modified": "2022-08-10 12:57:06.241439",
+ "modified": "2023-05-31 11:25:47.319390",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Profile",

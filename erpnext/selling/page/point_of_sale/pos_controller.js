@@ -1,8 +1,9 @@
 erpnext.PointOfSale.Controller = class {
 	constructor(wrapper) {
 		this.wrapper = $(wrapper).find('.layout-main-section');
+		this.profile = "hey";
 		this.page = wrapper.page;
-
+		console.log('Working code')
 		this.check_opening_entry();
 	}
 
@@ -81,20 +82,20 @@ erpnext.PointOfSale.Controller = class {
 					fields: table_fields
 				}
 			],
-			primary_action: async function({ company, pos_profile, balance_details }) {
+			primary_action: async function ({ company, pos_profile, balance_details }) {
 				if (!balance_details.length) {
 					frappe.show_alert({
 						message: __("Please add Mode of payments and opening balance details."),
 						indicator: 'red'
 					})
-					return frappe.utils.play_sound("error");
+					return frappe.utils.play_sound("error"); toggle_component
 				}
-
+				prepare_app_defaults
 				// filter balance details for empty rows
 				balance_details = balance_details.filter(d => d.mode_of_payment);
 
 				const method = "erpnext.selling.page.point_of_sale.point_of_sale.create_opening_voucher";
-				const res = await frappe.call({ method, args: { pos_profile, company, balance_details }, freeze:true });
+				const res = await frappe.call({ method, args: { pos_profile, company, balance_details }, freeze: true });
 				!res.exc && me.prepare_app_defaults(res.message);
 				dialog.hide();
 			},
@@ -128,7 +129,13 @@ erpnext.PointOfSale.Controller = class {
 				const profile = res.message;
 				Object.assign(this.settings, profile);
 				this.settings.customer_groups = profile.customer_groups.map(group => group.name);
-				this.make_app();
+				// conditional check for sales invoice
+				if (profile.create_sales_invoice == 1) {
+					this.make_sales()
+				}
+				else {
+					this.make_app();
+				}
 			}
 		});
 	}
@@ -140,6 +147,14 @@ erpnext.PointOfSale.Controller = class {
 					Opened at ${moment(this.pos_opening_time).format("Do MMMM, h:mma")}
 				</a>
 			</span>`);
+	}
+
+	// function to create sales invoice 
+	make_sales() {
+		this.prepare_dom();
+		this.prepare_sales_components();
+		this.prepare_menu();
+		this.make_invoice();
 	}
 
 	make_app() {
@@ -155,6 +170,16 @@ erpnext.PointOfSale.Controller = class {
 		);
 
 		this.$components_wrapper = this.wrapper.find('.point-of-sale-app');
+	}
+
+	// Create Sales Invoice
+	prepare_sales_components() {
+		this.init_item_selector();
+		this.init_item_details();
+		this.init_item_cart();
+		this.init_payments();
+		this.init_recent_SalesOrder_list();
+		this.init_SalesOrder_summary();
 	}
 
 	prepare_components() {
@@ -194,7 +219,7 @@ erpnext.PointOfSale.Controller = class {
 		if (this.frm.doc.items.length == 0) {
 			frappe.show_alert({
 				message: __("You must add atleast one item to save it as draft."),
-				indicator:'red'
+				indicator: 'red'
 			});
 			frappe.utils.play_sound("error");
 			return;
@@ -367,12 +392,14 @@ erpnext.PointOfSale.Controller = class {
 		});
 	}
 
-	init_recent_order_list() {
+	// Recent Sales Invoice
+	init_recent_SalesOrder_list() {
 		this.recent_order_list = new erpnext.PointOfSale.PastOrderList({
 			wrapper: this.$components_wrapper,
+			profile: this.pos_profile,
 			events: {
 				open_invoice_data: (name) => {
-					frappe.db.get_doc('POS Invoice', name).then((doc) => {
+					frappe.db.get_doc('Sales Invoice', name).then((doc) => {
 						this.order_summary.load_summary_of(doc);
 					});
 				},
@@ -381,9 +408,73 @@ erpnext.PointOfSale.Controller = class {
 		})
 	}
 
+	// Recent Sales Invoice
+	init_SalesOrder_summary() {
+		this.order_summary = new erpnext.PointOfSale.PastOrderSummary({
+			wrapper: this.$components_wrapper,
+			profile: this.pos_profile,
+			events: {
+				get_frm: () => this.frm,
+
+				process_return: (name) => {
+					this.recent_order_list.toggle_component(false);
+					frappe.db.get_doc('Sales Invoice', name).then((doc) => {
+						frappe.run_serially([
+							() => this.make_return_invoice(doc),
+							() => this.cart.load_invoice(),
+							() => this.item_selector.toggle_component(true)
+						]);
+					});
+				},
+				edit_order: (name) => {
+					this.recent_order_list.toggle_component(false);
+					frappe.run_serially([
+						() => this.frm.refresh(name),
+						() => this.frm.call('reset_mode_of_payments'),
+						() => this.cart.load_invoice(),
+						() => this.item_selector.toggle_component(true)
+					]);
+				},
+				delete_order: (name) => {
+					frappe.model.delete_doc(this.frm.doc.doctype, name, () => {
+						this.recent_order_list.refresh_list();
+					});
+				},
+				new_order: () => {
+					frappe.run_serially([
+						() => frappe.dom.freeze(),
+						() => this.make_new_invoice(),
+						() => this.item_selector.toggle_component(true),
+						() => frappe.dom.unfreeze(),
+					]);
+				}
+			}
+		})
+	}
+
+
+	init_recent_order_list() {
+		this.recent_order_list = new erpnext.PointOfSale.PastOrderList({
+			wrapper: this.$components_wrapper,
+			// passing pos profile for conditional check
+			profile: this.pos_profile,
+			events: {
+				open_invoice_data: (name) => {
+					frappe.db.get_doc('POS Invoice', name).then((doc) => {
+						this.order_summary.load_summary_of(doc);
+					});
+				},
+				reset_summary: () => this.order_summary.toggle_summary_placeholder(true)
+
+			}
+		})
+	}
+
 	init_order_summary() {
 		this.order_summary = new erpnext.PointOfSale.PastOrderSummary({
 			wrapper: this.$components_wrapper,
+			// passing pos profile for conditional check
+			profile: this.pos_profile,
 			events: {
 				get_frm: () => this.frm,
 
@@ -448,6 +539,49 @@ erpnext.PointOfSale.Controller = class {
 		]);
 	}
 
+	// Create sales invoice
+	make_invoice() {
+		return frappe.run_serially([
+			() => frappe.dom.freeze(),
+			() => this.make_invoice_frm(),
+			() => this.set_pos_profile_data(),
+			() => this.set_pos_profile_status(),
+			() => this.cart.load_invoice(),
+			() => frappe.dom.unfreeze()
+		]);
+	}
+
+	// Create Sales Invoice
+	make_invoice_frm() {
+		const doctype = 'Sales Invoice';
+		return new Promise(resolve => {
+			if (this.frm) {
+				this.frm = this.get_new_sales_frm(this.frm);
+				this.frm.doc.items = [];
+				this.frm.doc.is_pos = 1
+				resolve();
+			} else {
+				frappe.model.with_doctype(doctype, () => {
+					this.frm = this.get_new_sales_frm();
+					this.frm.doc.items = [];
+					this.frm.doc.is_pos = 1
+					resolve();
+				});
+			}
+		});
+	}
+
+	// Create sales invoice
+	get_new_sales_frm(_frm) {
+		const doctype = 'Sales Invoice';
+		const page = $('<div>');
+		const frm = _frm || new frappe.ui.form.Form(doctype, page, false);
+		const name = frappe.model.make_new_doc_and_get_name(doctype, true);
+		frm.refresh(name);
+
+		return frm;
+	}
+
 	make_sales_invoice_frm() {
 		const doctype = 'POS Invoice';
 		return new Promise(resolve => {
@@ -466,6 +600,7 @@ erpnext.PointOfSale.Controller = class {
 			}
 		});
 	}
+
 
 	get_new_frm(_frm) {
 		const doctype = 'POS Invoice';
@@ -530,7 +665,7 @@ erpnext.PointOfSale.Controller = class {
 
 				if (['qty', 'conversion_factor'].includes(field) && value > 0 && !this.allow_negative_stock) {
 					const qty_needed = field === 'qty' ? value * item_row.conversion_factor : item_row.qty * value;
-					await this.check_stock_availability(item_row, qty_needed, this.frm.doc.set_warehouse);
+					// await this.check_stock_availability(item_row, qty_needed, this.frm.doc.set_warehouse);
 				}
 
 				if (this.is_current_item_being_edited(item_row) || from_selector) {
@@ -561,7 +696,7 @@ erpnext.PointOfSale.Controller = class {
 
 				if (field === 'qty' && value !== 0 && !this.allow_negative_stock) {
 					const qty_needed = value * item_row.conversion_factor;
-					await this.check_stock_availability(item_row, qty_needed, this.frm.doc.set_warehouse);
+					// await this.check_stock_availability(item_row, qty_needed, this.frm.doc.set_warehouse);
 				}
 
 				await this.trigger_new_item_events(item_row);
@@ -676,7 +811,7 @@ erpnext.PointOfSale.Controller = class {
 
 	async check_serial_no_availablilty(item_code, warehouse, serial_no) {
 		const method = "erpnext.stock.doctype.serial_no.serial_no.get_pos_reserved_serial_nos";
-		const args = {filters: { item_code, warehouse }}
+		const args = { filters: { item_code, warehouse } }
 		const res = await frappe.call({ method, args });
 
 		if (res.message.includes(serial_no)) {

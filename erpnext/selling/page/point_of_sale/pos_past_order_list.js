@@ -1,7 +1,12 @@
 erpnext.PointOfSale.PastOrderList = class {
-	constructor({ wrapper, events }) {
+	constructor({ wrapper, profile, events }) {
 		this.wrapper = wrapper;
 		this.events = events;
+		this.profile = profile;
+
+
+		console.log("1", this.profile)
+
 
 		this.init_component();
 	}
@@ -10,6 +15,8 @@ erpnext.PointOfSale.PastOrderList = class {
 		this.prepare_dom();
 		this.make_filter_section();
 		this.bind_events();
+
+		console.log("2", this.profile)
 	}
 
 	prepare_dom() {
@@ -30,6 +37,7 @@ erpnext.PointOfSale.PastOrderList = class {
 
 	bind_events() {
 		this.search_field.$input.on('input', (e) => {
+
 			clearTimeout(this.last_search);
 			this.last_search = setTimeout(() => {
 				const search_term = e.target.value;
@@ -37,7 +45,7 @@ erpnext.PointOfSale.PastOrderList = class {
 			}, 300);
 		});
 		const me = this;
-		this.$invoices_container.on('click', '.invoice-wrapper', function() {
+		this.$invoices_container.on('click', '.invoice-wrapper', function () {
 			const invoice_name = unescape($(this).attr('data-invoice-name'));
 
 			me.events.open_invoice_data(invoice_name);
@@ -61,7 +69,7 @@ erpnext.PointOfSale.PastOrderList = class {
 				fieldtype: 'Select',
 				options: `Draft\nPaid\nConsolidated\nReturn`,
 				placeholder: __('Filter by invoice status'),
-				onchange: function() {
+				onchange: function () {
 					if (me.$component.is(':visible')) me.refresh_list();
 				}
 			},
@@ -74,18 +82,20 @@ erpnext.PointOfSale.PastOrderList = class {
 	}
 
 	refresh_list() {
+
 		frappe.dom.freeze();
 		this.events.reset_summary();
 		const search_term = this.search_field.get_value();
 		const status = this.status_field.get_value();
+		const profile = this.profile
 
 		this.$invoices_container.html('');
-
 		return frappe.call({
 			method: "erpnext.selling.page.point_of_sale.point_of_sale.get_past_order_list",
 			freeze: true,
-			args: { search_term, status },
+			args: { search_term, status, profile },
 			callback: (response) => {
+				console.log("3", response)
 				frappe.dom.unfreeze();
 				response.message.forEach(invoice => {
 					const invoice_html = this.get_invoice_html(invoice);
@@ -96,7 +106,7 @@ erpnext.PointOfSale.PastOrderList = class {
 	}
 
 	get_invoice_html(invoice) {
-		const posting_datetime = moment(invoice.posting_date+" "+invoice.posting_time).format("Do MMMM, h:mma");
+		const posting_datetime = moment(invoice.posting_date + " " + invoice.posting_time).format("Do MMMM, h:mma");
 		return (
 			`<div class="invoice-wrapper" data-invoice-name="${escape(invoice.name)}">
 				<div class="invoice-name-date">

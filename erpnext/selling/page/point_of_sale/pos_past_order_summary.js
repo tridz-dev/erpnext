@@ -48,7 +48,7 @@ erpnext.PointOfSale.PastOrderSummary = class {
 		const email_dialog = new frappe.ui.Dialog({
 			title: 'Email Receipt',
 			fields: [
-				{fieldname: 'email_id', fieldtype: 'Data', options: 'Email', label: 'Email ID'},
+				{ fieldname: 'email_id', fieldtype: 'Data', options: 'Email', label: 'Email ID' },
 				// {fieldname:'remarks', fieldtype:'Text', label:'Remarks (if any)'}
 			],
 			primary_action: () => {
@@ -61,7 +61,7 @@ erpnext.PointOfSale.PastOrderSummary = class {
 		const print_dialog = new frappe.ui.Dialog({
 			title: 'Print Receipt',
 			fields: [
-				{fieldname: 'print', fieldtype: 'Data', label: 'Print Preview'}
+				{ fieldname: 'print', fieldtype: 'Data', label: 'Print Preview' }
 			],
 			primary_action: () => {
 				this.print_receipt();
@@ -263,7 +263,7 @@ erpnext.PointOfSale.PastOrderSummary = class {
 					if (r.message["emails_not_sent_to"]) {
 						frappe.msgprint(__(
 							"Email not sent to {0} (unsubscribed / disabled)",
-							[ frappe.utils.escape_html(r.message["emails_not_sent_to"]) ]
+							[frappe.utils.escape_html(r.message["emails_not_sent_to"])]
 						));
 					} else {
 						frappe.show_alert({
@@ -311,12 +311,12 @@ erpnext.PointOfSale.PastOrderSummary = class {
 
 		return [
 			{ condition: this.doc.docstatus === 0, visible_btns: ['Edit Order', 'Delete Order'] },
-			{ condition: !this.doc.is_return && this.doc.docstatus === 1, visible_btns: ['Print Receipt', 'Email Receipt', 'Return']},
-			{ condition: this.doc.is_return && this.doc.docstatus === 1, visible_btns: ['Print Receipt', 'Email Receipt']}
+			{ condition: !this.doc.is_return && this.doc.docstatus === 1, visible_btns: ['Print Receipt', 'Email Receipt', 'Return'] },
+			{ condition: this.doc.is_return && this.doc.docstatus === 1, visible_btns: ['Print Receipt', 'Email Receipt'] }
 		];
 	}
 
-	load_summary_of(doc, after_submission=false) {
+	load_summary_of(doc, after_submission = false) {
 		after_submission ?
 			this.$component.css('grid-column', 'span 10 / span 10') :
 			this.$component.css('grid-column', 'span 6 / span 6');

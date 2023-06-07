@@ -271,26 +271,44 @@ def create_opening_voucher(pos_profile, company, balance_details):
 
 
 @frappe.whitelist()
-def get_past_order_list(search_term, status, limit=20):
+def get_past_order_list(search_term, status, profile, limit=20):
 	fields = ["name", "grand_total", "currency", "customer", "posting_time", "posting_date"]
 	invoice_list = []
+	profile = frappe.get_doc('POS Profile' , profile )
+	print("==============1=============",profile.create_sales_invoice)
+	if profile.create_sales_invoice == 1 :
+		if search_term and status:
+			invoices_by_customer = frappe.db.get_all(
+				"Sales Invoice",
+				filters={"customer": ["like", "%{}%".format(search_term)], "status": status},
+				fields=fields,
+			)
+			invoices_by_name = frappe.db.get_all(
+				"Sales Invoice",
+				filters={"name": ["like", "%{}%".format(search_term)], "status": status},
+				fields=fields,
+			)
 
-	if search_term and status:
-		invoices_by_customer = frappe.db.get_all(
-			"POS Invoice",
-			filters={"customer": ["like", "%{}%".format(search_term)], "status": status},
-			fields=fields,
-		)
-		invoices_by_name = frappe.db.get_all(
-			"POS Invoice",
-			filters={"name": ["like", "%{}%".format(search_term)], "status": status},
-			fields=fields,
-		)
+			invoice_list = invoices_by_customer + invoices_by_name
+		elif status:
+			invoice_list = frappe.db.get_all("Sales Invoice", filters={"status": status}, fields=fields)
+	else :
+		if search_term and status:
+			invoices_by_customer = frappe.db.get_all(
+				"POS Invoice",
+				filters={"customer": ["like", "%{}%".format(search_term)], "status": status},
+				fields=fields,
+			)
+			invoices_by_name = frappe.db.get_all(
+				"POS Invoice",
+				filters={"name": ["like", "%{}%".format(search_term)], "status": status},
+				fields=fields,
+			)
 
-		invoice_list = invoices_by_customer + invoices_by_name
-	elif status:
-		invoice_list = frappe.db.get_all("POS Invoice", filters={"status": status}, fields=fields)
-
+			invoice_list = invoices_by_customer + invoices_by_name
+		elif status:
+			invoice_list = frappe.db.get_all("POS Invoice", filters={"status": status}, fields=fields)
+		
 	return invoice_list
 
 

@@ -2,28 +2,28 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('POS Closing Entry', {
-	onload: function(frm) {
+	onload: function (frm) {
 		frm.ignore_doctypes_on_cancel_all = ['POS Invoice Merge Log'];
-		frm.set_query("pos_profile", function(doc) {
+		frm.set_query("pos_profile", function (doc) {
 			return {
 				filters: { 'user': doc.user }
 			};
 		});
 
-		frm.set_query("user", function(doc) {
+		frm.set_query("user", function (doc) {
 			return {
 				query: "erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry.get_cashiers",
 				filters: { 'parent': doc.pos_profile }
 			};
 		});
 
-		frm.set_query("pos_opening_entry", function(doc) {
+		frm.set_query("pos_opening_entry", function (doc) {
 			return { filters: { 'status': 'Open', 'docstatus': 1 } };
 		});
 
 		if (frm.doc.docstatus === 0 && !frm.doc.amended_from) frm.set_value("period_end_date", frappe.datetime.now_datetime());
 
-		frappe.realtime.on('closing_process_complete', async function(data) {
+		frappe.realtime.on('closing_process_complete', async function (data) {
 			await frm.reload_doc();
 			if (frm.doc.status == 'Failed' && frm.doc.error_message) {
 				frappe.msgprint({
@@ -47,7 +47,7 @@ frappe.ui.form.on('POS Closing Entry', {
 		}
 	},
 
-	refresh: function(frm) {
+	refresh: function (frm) {
 		if (frm.doc.docstatus == 1 && frm.doc.status == 'Failed') {
 			const issue = '<a id="jump_to_error" style="text-decoration: underline;">issue</a>';
 			frm.dashboard.set_headline(
@@ -111,7 +111,7 @@ frappe.ui.form.on('POS Closing Entry', {
 		});
 	},
 
-	before_save: async function(frm) {
+	before_save: async function (frm) {
 		frappe.dom.freeze(__('Processing Sales! Please Wait...'));
 
 		frm.set_value("grand_total", 0);
@@ -123,11 +123,23 @@ frappe.ui.form.on('POS Closing Entry', {
 			row.expected_amount = row.opening_amount;
 		}
 
-		const pos_inv_promises = frm.doc.pos_transactions.map(
-			row => frappe.db.get_doc("POS Invoice", row.pos_invoice)
-		);
+		const sales_invoice_check = await frappe.db.get_doc("POS Profile", frm.doc.pos_profile);
+		let pos_inv_promises;
+		if (sales_invoice_check.create_sales_invoice == 1) {
+			pos_inv_promises = frm.doc.pos_transactions.map(
+				row => frappe.db.get_doc("Sales Invoice", row.pos_invoice)
+			);
+		} else {
+			pos_inv_promises = frm.doc.pos_transactions.map(
+				row => frappe.db.get_doc("POS Invoice", row.pos_invoice)
+			);
+		}
 
 		const pos_invoices = await Promise.all(pos_inv_promises);
+
+		// Rest of your code that uses pos_invoices
+
+
 
 		for (let doc of pos_invoices) {
 			frm.doc.grand_total += flt(doc.grand_total);

@@ -177,7 +177,7 @@ erpnext.PointOfSale.ItemDetails = class {
 			this[`${fieldname}_control`] = frappe.ui.form.make_control({
 				df: {
 					...field_meta,
-					onchange: function() {
+					onchange: function () {
 						me.events.form_updated(me.current_item, fieldname, this.value);
 					}
 				},
@@ -217,7 +217,7 @@ erpnext.PointOfSale.ItemDetails = class {
 	bind_custom_control_change_event() {
 		const me = this;
 		if (this.rate_control) {
-			this.rate_control.df.onchange = function() {
+			this.rate_control.df.onchange = function () {
 				if (this.value || flt(this.value) === 0) {
 					me.events.form_updated(me.current_item, 'rate', this.value).then(() => {
 						const item_row = frappe.get_doc(me.doctype, me.name);
@@ -238,7 +238,7 @@ erpnext.PointOfSale.ItemDetails = class {
 
 		if (this.warehouse_control) {
 			this.warehouse_control.df.reqd = 1;
-			this.warehouse_control.df.onchange = function() {
+			this.warehouse_control.df.onchange = function () {
 				if (this.value) {
 					me.events.form_updated(me.current_item, 'warehouse', this.value).then(() => {
 						me.item_stock_map = me.events.get_item_stock_map();
@@ -271,7 +271,7 @@ erpnext.PointOfSale.ItemDetails = class {
 
 		if (this.serial_no_control) {
 			this.serial_no_control.df.reqd = 1;
-			this.serial_no_control.df.onchange = async function() {
+			this.serial_no_control.df.onchange = async function () {
 				!me.current_item.batch_no && await me.auto_update_batch_no();
 				me.events.form_updated(me.current_item, 'serial_no', this.value);
 			}
@@ -294,7 +294,7 @@ erpnext.PointOfSale.ItemDetails = class {
 		}
 
 		if (this.uom_control) {
-			this.uom_control.df.onchange = function() {
+			this.uom_control.df.onchange = function () {
 				me.events.form_updated(me.current_item, 'uom', this.value);
 
 				const item_row = frappe.get_doc(me.doctype, me.name);
@@ -321,7 +321,7 @@ erpnext.PointOfSale.ItemDetails = class {
 
 			// find batch nos of the selected serial no
 			const serials_with_batch_no = await frappe.db.get_list("Serial No", {
-				filters: { 'name': ["in", selected_serial_nos]},
+				filters: { 'name': ["in", selected_serial_nos] },
 				fields: ["batch_no", "name"]
 			});
 			const batch_serial_map = serials_with_batch_no.reduce((acc, r) => {
@@ -371,7 +371,7 @@ erpnext.PointOfSale.ItemDetails = class {
 
 	bind_fields_to_numpad_fields() {
 		const me = this;
-		this.$form_container.on('click', '.input-with-feedback', function() {
+		this.$form_container.on('click', '.input-with-feedback', function () {
 			const fieldname = $(this).attr('data-fieldname');
 			if (this.last_field_focused != fieldname) {
 				me.events.item_field_focused(fieldname);

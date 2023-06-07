@@ -130,16 +130,16 @@ erpnext.PointOfSale.ItemCart = class {
 			},
 			cols: 5,
 			keys: [
-				[ 1, 2, 3, 'Quantity' ],
-				[ 4, 5, 6, 'Discount' ],
-				[ 7, 8, 9, 'Rate' ],
-				[ '.', 0, 'Delete', 'Remove' ]
+				[1, 2, 3, 'Quantity'],
+				[4, 5, 6, 'Discount'],
+				[7, 8, 9, 'Rate'],
+				['.', 0, 'Delete', 'Remove']
 			],
 			css_classes: [
-				[ '', '', '', 'col-span-2' ],
-				[ '', '', '', 'col-span-2' ],
-				[ '', '', '', 'col-span-2' ],
-				[ '', '', '', 'col-span-2 remove-btn' ]
+				['', '', '', 'col-span-2'],
+				['', '', '', 'col-span-2'],
+				['', '', '', 'col-span-2'],
+				['', '', '', 'col-span-2 remove-btn']
 			],
 			fieldnames_map: { 'Quantity': 'qty', 'Discount': 'discount_percentage' }
 		})
@@ -167,14 +167,14 @@ erpnext.PointOfSale.ItemCart = class {
 			me.toggle_customer_info(false);
 		});
 
-		this.$customer_section.on('click', '.customer-display', function(e) {
+		this.$customer_section.on('click', '.customer-display', function (e) {
 			if ($(e.target).closest('.reset-customer-btn').length) return;
 
 			const show = me.$cart_container.is(':visible');
 			me.toggle_customer_info(show);
 		});
 
-		this.$cart_items_wrapper.on('click', '.cart-item-wrapper', function() {
+		this.$cart_items_wrapper.on('click', '.cart-item-wrapper', function () {
 			const $cart_item = $(this);
 
 			me.toggle_item_highlight(this);
@@ -191,7 +191,7 @@ erpnext.PointOfSale.ItemCart = class {
 			this.numpad_value = '';
 		});
 
-		this.$component.on('click', '.checkout-btn', async function() {
+		this.$component.on('click', '.checkout-btn', async function () {
 			if ($(this).attr('style').indexOf('--blue-500') == -1) return;
 
 			await me.events.checkout();
@@ -208,10 +208,10 @@ erpnext.PointOfSale.ItemCart = class {
 		this.$component.on('click', '.add-discount-wrapper', () => {
 			const can_edit_discount = this.$add_discount_elem.find('.edit-discount-btn').length;
 
-			if(!this.discount_field || can_edit_discount) this.show_discount_control();
+			if (!this.discount_field || can_edit_discount) this.show_discount_control();
 		});
 
-		frappe.ui.form.on("POS Invoice", "paid_amount", frm => {
+		frappe.ui.form.on("Sales Invoice", "paid_amount", frm => {
 			// called when discount is applied
 			this.update_totals_section(frm);
 		});
@@ -311,7 +311,7 @@ erpnext.PointOfSale.ItemCart = class {
 				options: 'Customer',
 				placeholder: __('Search by customer name, phone, email.'),
 				get_query: () => query,
-				onchange: function() {
+				onchange: function () {
 					if (this.value) {
 						const frm = me.events.get_frm();
 						frappe.dom.freeze();
@@ -379,9 +379,9 @@ erpnext.PointOfSale.ItemCart = class {
 			df: {
 				label: __('Discount'),
 				fieldtype: 'Data',
-				placeholder: ( discount ? discount + '%' :  __('Enter discount percentage.') ),
+				placeholder: (discount ? discount + '%' : __('Enter discount percentage.')),
 				input_class: 'input-xs',
-				onchange: function() {
+				onchange: function () {
 					if (flt(this.value) != 0) {
 						frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'additional_discount_percentage', flt(this.value));
 						me.hide_discount_control(this.value);
@@ -424,7 +424,7 @@ erpnext.PointOfSale.ItemCart = class {
 
 	update_customer_section() {
 		const me = this;
-		const { customer, email_id='', mobile_no='', image } = this.customer_info || {};
+		const { customer, email_id = '', mobile_no = '', image } = this.customer_info || {};
 
 		if (customer) {
 			this.$customer_section.html(
@@ -874,18 +874,18 @@ erpnext.PointOfSale.ItemCart = class {
 			fieldtype: 'Data',
 			options: 'email',
 			placeholder: __("Enter customer's email")
-		},{
+		}, {
 			fieldname: 'mobile_no',
 			label: __('Phone Number'),
 			fieldtype: 'Data',
 			placeholder: __("Enter customer's phone number")
-		},{
+		}, {
 			fieldname: 'loyalty_program',
 			label: __('Loyalty Program'),
 			fieldtype: 'Link',
 			options: 'Loyalty Program',
 			placeholder: __("Select Loyalty Program")
-		},{
+		}, {
 			fieldname: 'loyalty_points',
 			label: __('Loyalty Points'),
 			fieldtype: 'Data',
@@ -895,7 +895,8 @@ erpnext.PointOfSale.ItemCart = class {
 		const me = this;
 		dfs.forEach(df => {
 			this[`customer_${df.fieldname}_field`] = frappe.ui.form.make_control({
-				df: { ...df,
+				df: {
+					...df,
 					onchange: handle_customer_field_change,
 				},
 				parent: $customer_form.find(`.${df.fieldname}-field`),
@@ -917,7 +918,7 @@ erpnext.PointOfSale.ItemCart = class {
 						value: this.value
 					},
 					callback: (r) => {
-						if(!r.exc) {
+						if (!r.exc) {
 							me.customer_info[this.df.fieldname] = this.value;
 							frappe.show_alert({
 								message: __("Customer contact updated successfully."),
@@ -932,7 +933,7 @@ erpnext.PointOfSale.ItemCart = class {
 	}
 
 	fetch_customer_transactions() {
-		frappe.db.get_list('POS Invoice', {
+		frappe.db.get_list('Sales Invoice', {
 			filters: { customer: this.customer_info.customer, docstatus: 1 },
 			fields: ['name', 'grand_total', 'status', 'posting_date', 'posting_time', 'currency'],
 			limit: 20
@@ -946,11 +947,11 @@ erpnext.PointOfSale.ItemCart = class {
 				return;
 			};
 
-			const elapsed_time = moment(res[0].posting_date+" "+res[0].posting_time).fromNow();
+			const elapsed_time = moment(res[0].posting_date + " " + res[0].posting_time).fromNow();
 			this.$customer_section.find('.customer-desc').html(`Last transacted ${elapsed_time}`);
 
 			res.forEach(invoice => {
-				const posting_datetime = moment(invoice.posting_date+" "+invoice.posting_time).format("Do MMMM, h:mma");
+				const posting_datetime = moment(invoice.posting_date + " " + invoice.posting_time).format("Do MMMM, h:mma");
 				let indicator_color = {
 					'Paid': 'green',
 					'Draft': 'red',
@@ -1016,7 +1017,7 @@ erpnext.PointOfSale.ItemCart = class {
 
 		this.update_totals_section(frm);
 
-		if(frm.doc.docstatus === 1) {
+		if (frm.doc.docstatus === 1) {
 			this.$totals_section.find('.checkout-btn').css('display', 'none');
 			this.$totals_section.find('.edit-cart-btn').css('display', 'none');
 		} else {

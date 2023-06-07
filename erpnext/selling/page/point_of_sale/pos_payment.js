@@ -55,13 +55,13 @@ erpnext.PointOfSale.Payment = class {
 					`<div class="invoice_detail_field ${df.fieldname}-field" data-fieldname="${df.fieldname}"></div>`
 				);
 				let df_events = {
-					onchange: function() {
+					onchange: function () {
 						frm.set_value(this.df.fieldname, this.get_value());
 					}
 				};
 				if (df.fieldtype == "Button") {
 					df_events = {
-						click: function() {
+						click: function () {
 							if (frm.script_manager.has_handlers(df.fieldname, frm.doc.doctype)) {
 								frm.script_manager.trigger(df.fieldname, frm.doc.doctype, frm.doc.docname);
 							}
@@ -87,16 +87,16 @@ erpnext.PointOfSale.Payment = class {
 		this.number_pad = new erpnext.PointOfSale.NumberPad({
 			wrapper: this.$numpad,
 			events: {
-				numpad_event: function($btn) {
+				numpad_event: function ($btn) {
 					me.on_numpad_clicked($btn);
 				}
 			},
 			cols: 3,
 			keys: [
-				[ 1, 2, 3 ],
-				[ 4, 5, 6 ],
-				[ 7, 8, 9 ],
-				[ '.', 0, 'Delete' ]
+				[1, 2, 3],
+				[4, 5, 6],
+				[7, 8, 9],
+				['.', 0, 'Delete']
 			],
 		});
 
@@ -122,7 +122,7 @@ erpnext.PointOfSale.Payment = class {
 	bind_events() {
 		const me = this;
 
-		this.$payment_modes.on('click', '.mode-of-payment', function(e) {
+		this.$payment_modes.on('click', '.mode-of-payment', function (e) {
 			const mode_clicked = $(this);
 			// if clicked element doesn't have .mode-of-payment class then return
 			if (!$(e.target).is(mode_clicked)) return;
@@ -174,9 +174,9 @@ erpnext.PointOfSale.Payment = class {
 				if (!frm.doc.ignore_pricing_rule) {
 					frm.applying_pos_coupon_code = true;
 					frappe.run_serially([
-						() => frm.doc.ignore_pricing_rule=1,
+						() => frm.doc.ignore_pricing_rule = 1,
 						() => frm.trigger('ignore_pricing_rule'),
-						() => frm.doc.ignore_pricing_rule=0,
+						() => frm.doc.ignore_pricing_rule = 0,
 						() => frm.trigger('apply_pricing_rule'),
 						() => frm.save(),
 						() => this.update_totals_section(frm.doc),
@@ -193,7 +193,7 @@ erpnext.PointOfSale.Payment = class {
 
 		this.setup_listener_for_payments();
 
-		this.$payment_modes.on('click', '.shortcut', function() {
+		this.$payment_modes.on('click', '.shortcut', function () {
 			const value = $(this).attr('data-value');
 			me.selected_mode.set_value(value);
 		});
@@ -213,7 +213,7 @@ erpnext.PointOfSale.Payment = class {
 			this.events.submit_invoice();
 		});
 
-		frappe.ui.form.on('POS Invoice', 'paid_amount', (frm) => {
+		frappe.ui.form.on('Sales Invoice', 'paid_amount', (frm) => {
 			this.update_totals_section(frm.doc);
 
 			// need to re calculate cash shortcuts after discount is applied
@@ -223,7 +223,7 @@ erpnext.PointOfSale.Payment = class {
 			this.render_payment_mode_dom();
 		});
 
-		frappe.ui.form.on('POS Invoice', 'loyalty_amount', (frm) => {
+		frappe.ui.form.on('Sales Invoice', 'loyalty_amount', (frm) => {
 			const formatted_currency = format_currency(frm.doc.loyalty_amount, frm.doc.currency);
 			this.$payment_modes.find(`.loyalty-amount-amount`).html(formatted_currency);
 		});
@@ -349,7 +349,7 @@ erpnext.PointOfSale.Payment = class {
 				df: {
 					label: __('Remark'),
 					fieldtype: 'Data',
-					onchange: function() {}
+					onchange: function () { }
 				},
 				parent: this.$totals_section.find(`.remarks`),
 				render_input: true,
@@ -363,14 +363,13 @@ erpnext.PointOfSale.Payment = class {
 		const payments = doc.payments;
 		const currency = doc.currency;
 
-		this.$payment_modes.html(`${
-			payments.map((p, i) => {
-				const mode = p.mode_of_payment.replace(/ +/g, "_").toLowerCase();
-				const payment_type = p.type;
-				const margin = i % 2 === 0 ? 'pr-2' : 'pl-2';
-				const amount = p.amount > 0 ? format_currency(p.amount, currency) : '';
+		this.$payment_modes.html(`${payments.map((p, i) => {
+			const mode = p.mode_of_payment.replace(/ +/g, "_").toLowerCase();
+			const payment_type = p.type;
+			const margin = i % 2 === 0 ? 'pr-2' : 'pl-2';
+			const amount = p.amount > 0 ? format_currency(p.amount, currency) : '';
 
-				return (`
+			return (`
 					<div class="payment-mode-wrapper">
 						<div class="mode-of-payment" data-mode="${mode}" data-payment-type="${payment_type}">
 							${p.mode_of_payment}
@@ -379,8 +378,8 @@ erpnext.PointOfSale.Payment = class {
 						</div>
 					</div>
 				`);
-			}).join('')
-		}`);
+		}).join('')
+			}`);
 
 		payments.forEach(p => {
 			const mode = p.mode_of_payment.replace(/ +/g, "_").toLowerCase();
@@ -390,7 +389,7 @@ erpnext.PointOfSale.Payment = class {
 					label: p.mode_of_payment,
 					fieldtype: 'Currency',
 					placeholder: __('Enter {0} amount.', [p.mode_of_payment]),
-					onchange: function() {
+					onchange: function () {
 						const current_value = frappe.model.get_value(p.doctype, p.name, 'amount');
 						if (current_value != this.value) {
 							frappe.model
@@ -499,7 +498,7 @@ erpnext.PointOfSale.Payment = class {
 				placeholder: __("Enter amount to be redeemed."),
 				options: 'company:currency',
 				read_only,
-				onchange: async function() {
+				onchange: async function () {
 					if (!loyalty_points) return;
 
 					if (this.value > max_redeemable_amount) {

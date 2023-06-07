@@ -67,6 +67,17 @@ class SalesInvoice(SellingController):
 			}
 		]
 
+  
+	# Function call from point of sale pos_controller.js
+	@frappe.whitelist()
+	def reset_mode_of_payments(self):
+		if self.pos_profile:
+			pos_profile = frappe.get_cached_doc("POS Profile", self.pos_profile)
+			update_multi_mode_option(self, pos_profile)
+			self.paid_amount = 0
+
+
+
 	def set_indicator(self):
 		"""Set indicator for portal"""
 		if self.outstanding_amount < 0:
@@ -2607,3 +2618,5 @@ def check_if_return_invoice_linked_with_payment_entry(self):
 			message += " " + ", ".join(payment_entries_link) + " "
 			message += _("to unallocate the amount of this Return Invoice before cancelling it.")
 			frappe.throw(message)
+
+	
